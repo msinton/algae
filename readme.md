@@ -9,7 +9,7 @@ Algae is a [Scala][scala] library providing a diverse group of final tagless alg
 Algae is a new project under active development. Feedback and contributions are welcome.
 
 ### Introduction
-Algae defines final tagless algebras around common capabilities, such as [`Logging`][logging] and [`Counting`][counting]. The core library makes use of [Cats][cats], [Cats MTL][cats-mtl], and [Cats Effect][cats-effect], while modules use external libraries to implement, complement, and define additional algebras. Algae also defines constructs necessary to support the algebras, including: type classes, immutable data, and pure functions.
+Algae defines final tagless algebras around common capabilities, such as [`Logging`][logging] and [`Counting`][counting]. The core library makes use of [cats][cats], [cats-mtl][cats-mtl], and [cats-effect][cats-effect], while modules use external libraries to implement, complement, and define extra algebras. Algae also defines supportive constructs like: type classes, immutable data, and pure functions.
 
 ### Getting Started
 To get started with [sbt][sbt], simply add the following lines to your `build.sbt` file.
