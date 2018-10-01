@@ -40,6 +40,12 @@ s"""
  |  "com.ovoenergy" %% "algae-slf4j" % algaeVersion,
  |  "com.ovoenergy" %% "algae-logback" % algaeVersion
  |)
+ |
+ |// Modules for the Config algebra
+ |libraryDependencies ++= Seq(
+ |  "com.ovoenergy" %% "algae-ciris" % algaeVersion,
+ |  "com.ovoenergy" %% "algae-ciris-kubernetes" % algaeVersion
+ |)
  |```
  """.stripMargin.trim
 )

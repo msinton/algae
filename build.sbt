@@ -14,6 +14,8 @@ lazy val algae = project
   .aggregate(
     core,
     laws,
+    ciris,
+    `ciris-kubernetes`,
     kamon,
     `kamon-influxdb`,
     `kamon-system-metrics`,
@@ -59,6 +61,26 @@ lazy val laws = project
   .settings(commonSettings)
   .settings(catsLaws, catsMtlLaws, catsEffectLaws)
   .dependsOn(core)
+
+lazy val ciris = project
+  .in(file("ciris"))
+  .settings(
+    moduleName := "algae-ciris",
+    name := moduleName.value
+  )
+  .settings(commonSettings)
+  .settings(cirisCore, cirisCatsEffect, kindProjector)
+  .dependsOn(core)
+
+lazy val `ciris-kubernetes` = project
+  .in(file("ciris-kubernetes"))
+  .settings(
+    moduleName := "algae-ciris-kubernetes",
+    name := moduleName.value
+  )
+  .settings(commonSettings)
+  .settings(cirisKubernetes, kindProjector)
+  .dependsOn(ciris)
 
 lazy val kamon = project
   .in(file("kamon"))
@@ -119,7 +141,8 @@ lazy val tests = project
 lazy val commonSettings =
   scalaSettings ++
     testSettings ++
-    publishSettings
+    publishSettings ++
+    resolverSettings
 
 lazy val scalaSettings = Seq(
   scalaVersion := "2.12.7",
@@ -178,6 +201,10 @@ lazy val publishSettings = Seq(
     commitNextVersion,
     pushChanges
   )
+)
+
+lazy val resolverSettings = Seq(
+  resolvers += Resolver.bintrayRepo("ovotech", "maven")
 )
 
 lazy val noPublishSettings = Seq(

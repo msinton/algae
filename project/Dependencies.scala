@@ -4,8 +4,10 @@ import sbt._
 object Dependencies extends AutoPlugin {
   object Versions {
     val cats = "1.4.0"
-    val catsMtl = "0.3.0"
+    val catsMtl = "0.4.0"
     val catsEffect = "1.0.0"
+    val ciris = "0.11.0"
+    val cirisKubernetes = "0.7"
     val kamon = "1.1.3"
     val kamonInfluxDb = "1.0.2"
     val kamonSystemMetrics = "1.0.0"
@@ -49,6 +51,24 @@ object Dependencies extends AutoPlugin {
     val catsEffectLaws: Seq[Def.Setting[_]] = Def.settings(
       libraryDependencies ++= Seq(
         "org.typelevel" %% "cats-effect-laws" % Versions.catsEffect
+      )
+    )
+
+    val cirisCore: Seq[Def.Setting[_]] = Def.settings(
+      libraryDependencies ++= Seq(
+        "is.cir" %% "ciris-core" % Versions.ciris
+      )
+    )
+
+    val cirisCatsEffect: Seq[Def.Setting[_]] = Def.settings(
+      libraryDependencies ++= Seq(
+        "is.cir" %% "ciris-cats-effect" % Versions.ciris
+      )
+    )
+
+    val cirisKubernetes: Seq[Def.Setting[_]] = Def.settings(
+      libraryDependencies ++= Seq(
+        "com.ovoenergy" %% "ciris-kubernetes" % Versions.cirisKubernetes
       )
     )
 
