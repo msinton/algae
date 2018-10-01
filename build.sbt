@@ -50,7 +50,7 @@ lazy val docs = project
     )
   )
   .enablePlugins(BuildInfoPlugin, TutPlugin)
-  .dependsOn(core)
+  .dependsOn(core, slf4j)
 
 lazy val laws = project
   .in(file("laws"))
