@@ -16,6 +16,7 @@ package object algae {
         override val monoid: Monoid[L] = L
         override def get: F[L] = ref.get
         override def set(l: L): F[Unit] = ref.set(l)
+        override def modify(f: L => L): F[Unit] = ref.update(f)
       }
     }
 }
