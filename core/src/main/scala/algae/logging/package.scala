@@ -1,10 +1,10 @@
 package algae
 
+import java.lang.StringBuilder
+
 import algae.syntax.logging._
-import cats.instances.string._
+import cats.data.Chain
 import cats.syntax.foldable._
-import cats.syntax.option._
-import cats.syntax.semigroup._
 import cats.{Always, Eval, Foldable, Order}
 
 package object logging {
@@ -13,21 +13,34 @@ package object logging {
     G: Foldable[G],
     E: LogEntry[E]
   ): Option[Eval[String]] = {
-    def entry(e: E): String =
-      "- " combine e.message
+    if (ge.isEmpty) None
+    else
+      Some(Always {
+        var entries = 0
+        var messageLength = 0
+        var messages = Chain.empty[String]
 
-    def append(s: String, e: E): String =
-      s combine "\n" combine entry(e)
+        ge.foldLeft(()) { (_, e) =>
+          entries += 1
+          val message = e.message
+          messageLength += message.length
+          messages = messages.append(message)
+        }
 
-    def combine(a: E, b: E): String =
-      append(entry(a), b)
+        if (entries == 1)
+          messages.foldLeft("")((_, m) => m)
+        else {
+          var first = true
+          messages
+            .foldLeft(new StringBuilder(messageLength + 3 * entries - 1)) { (b, m) =>
+              if (first) first = false
+              else b.append('\n')
 
-    ge.foldLeft[Option[(Option[E], Eval[String])]](None) {
-        case (None, a)               => (a.some -> Always(a.message)).some
-        case (Some((Some(a), _)), b) => (none -> Always(combine(a, b))).some
-        case (Some((None, a)), b)    => (none -> a.map(append(_, b))).some
-      }
-      .map { case (_, message) => message }
+              b.append("- ").append(m)
+            }
+            .toString
+        }
+      })
   }
 
   def logLevel[G[_], E](ge: G[E])(
