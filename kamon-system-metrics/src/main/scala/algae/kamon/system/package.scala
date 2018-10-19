@@ -1,16 +1,12 @@
 package algae.kamon
 
-import cats.effect.Sync
+import cats.effect.{Resource, Sync}
 import kamon.system.SystemMetrics
 
 package object system {
-  def withSystemMetricsCollection[F[_], A](fa: F[A])(implicit F: Sync[F]): F[A] = {
-    def start: F[Unit] =
-      F.delay(SystemMetrics.startCollecting())
-
-    def stop: F[Unit] =
-      F.delay(SystemMetrics.stopCollecting())
-
-    F.bracket(start)(_ => fa)(_ => stop)
+  def systemMetricsCollection[F[_]](implicit F: Sync[F]): Resource[F, Unit] = {
+    val acquire = F.delay(SystemMetrics.startCollecting())
+    val release = F.delay(SystemMetrics.stopCollecting())
+    Resource.make(acquire)(_ => release)
   }
 }
