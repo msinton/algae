@@ -24,15 +24,4 @@ object CountingNow {
       override def countNow(e: E, es: E*): F[Unit] =
         dispatch(g(e, es: _*))
     }
-
-  implicit def fromCounting[F[_], G[_], E](
-    implicit counting: Counting[F, G, E]
-  ): CountingNow[F, G, E] =
-    new CountingNow[F, G, E] {
-      override def countNowN(ge: G[E]): F[Unit] =
-        counting.countNowN(ge)
-
-      override def countNow(e: E, es: E*): F[Unit] =
-        counting.countNow(e, es: _*)
-    }
 }

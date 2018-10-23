@@ -4,14 +4,10 @@ import cats.Applicative
 import cats.kernel.Monoid
 import cats.syntax.semigroup._
 
-trait Counting[F[_], G[_], E] {
+trait Counting[F[_], G[_], E] extends CountingNow[F, G, E] {
   def countN(ge: G[E]): F[Unit]
 
   def count(e: E, es: E*): F[Unit]
-
-  def countNowN(ge: G[E]): F[Unit]
-
-  def countNow(e: E, es: E*): F[Unit]
 
   def clearCounts: F[Unit]
 

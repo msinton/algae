@@ -49,21 +49,4 @@ object LoggingNow {
       override def logNowContext(gm: G[M])(e: E, es: E*): F[Unit] =
         dispatchNow(g(e, es: _*), gm)
     }
-
-  implicit def fromLogging[F[_], G[_], E, M](
-    implicit logging: Logging[F, G, E, M]
-  ): LoggingNow[F, G, E, M] =
-    new LoggingNow[F, G, E, M] {
-      override def logNowN(ge: G[E]): F[Unit] =
-        logging.logNowN(ge)
-
-      override def logNow(e: E, es: E*): F[Unit] =
-        logging.logNow(e, es: _*)
-
-      override def logNowContextN(gm: G[M])(ge: G[E]): F[Unit] =
-        logging.logNowContextN(gm)(ge)
-
-      override def logNowContext(gm: G[M])(e: E, es: E*): F[Unit] =
-        logging.logNowContext(gm)(e, es: _*)
-    }
 }

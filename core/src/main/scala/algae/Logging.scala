@@ -8,18 +8,10 @@ import cats.syntax.option._
 import cats.syntax.semigroupk._
 import cats.{Applicative, Eval, Foldable, Monad, MonoidK}
 
-trait Logging[F[_], G[_], E, M] {
+trait Logging[F[_], G[_], E, M] extends LoggingNow[F, G, E, M] {
   def logN(ge: G[E]): F[Unit]
 
   def log(e: E, es: E*): F[Unit]
-
-  def logNowN(ge: G[E]): F[Unit]
-
-  def logNow(e: E, es: E*): F[Unit]
-
-  def logNowContextN(gm: G[M])(ge: G[E]): F[Unit]
-
-  def logNowContext(gm: G[M])(e: E, es: E*): F[Unit]
 
   def clearLogs: F[Unit]
 
