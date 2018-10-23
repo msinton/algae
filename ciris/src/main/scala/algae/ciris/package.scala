@@ -9,10 +9,10 @@ package object ciris {
     new CirisConfig[F] {
       override def env[A](key: String)(
         implicit decoder: ConfigDecoder[String, A]
-      ): ConfigValue[F, A] = envF(key)
+      ): ConfigEntry[F, String, String, A] = envF(key)
 
       override def prop[A](key: String)(
         implicit decoder: ConfigDecoder[String, A]
-      ): ConfigValue[F, A] = propF(key)
+      ): ConfigEntry[F, String, String, A] = propF(key)
     }
 }

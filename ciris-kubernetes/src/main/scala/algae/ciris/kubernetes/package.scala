@@ -5,7 +5,7 @@ import _root_.cats.syntax.flatMap._
 import _root_.cats.syntax.functor._
 import _root_.ciris._
 import _root_.ciris.cats.effect._
-import _root_.ciris.kubernetes.{secretInNamespace => secret, _}
+import _root_.ciris.kubernetes._
 import _root_.io.kubernetes.client.ApiClient
 
 package object kubernetes {
@@ -22,15 +22,24 @@ package object kubernetes {
     registerAuth: F[Unit]
   )(implicit F: Sync[F]): KubernetesConfig[F] =
     new KubernetesConfig[F] {
-      override def secretInNamespace(namespace: String): SecretInNamespace[F] =
-        secret(namespace, apiClient, registerAuth)
+      def secret[A](namespace: String, name: String)(
+        implicit decoder: ConfigDecoder[String, A]
+      ): ConfigEntry[F, SecretKey, String, A] =
+        secretInNamespace(namespace, apiClient, registerAuth)
+          .apply[A](name)
+
+      def secret[A](namespace: String, name: String, key: String)(
+        implicit decoder: ConfigDecoder[String, A]
+      ): ConfigEntry[F, SecretKey, String, A] =
+        secretInNamespace(namespace, apiClient, registerAuth)
+          .apply[A](name, key)
 
       override def env[A](key: String)(
         implicit decoder: ConfigDecoder[String, A]
-      ): ConfigValue[F, A] = envF(key)
+      ): ConfigEntry[F, String, String, A] = envF(key)
 
       override def prop[A](key: String)(
         implicit decoder: ConfigDecoder[String, A]
-      ): ConfigValue[F, A] = propF(key)
+      ): ConfigEntry[F, String, String, A] = propF(key)
     }
 }
