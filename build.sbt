@@ -50,7 +50,13 @@ lazy val docs = project
     )
   )
   .enablePlugins(BuildInfoPlugin, TutPlugin)
-  .dependsOn(core, slf4j)
+  .dependsOn(
+    core,
+    `ciris-kubernetes`,
+    `kamon-system-metrics`,
+    `kamon-influxdb`,
+    slf4j
+  )
 
 lazy val laws = project
   .in(file("laws"))
