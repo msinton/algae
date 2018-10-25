@@ -4,7 +4,7 @@ import algae.logging.{LogEntry, LogLevel, MdcEntry}
 import algae.mtl.MonadLog
 import algae.syntax.logging._
 import cats.effect.Sync
-import cats.syntax.apply._
+import cats.syntax.flatMap._
 import cats.syntax.foldable._
 import cats.syntax.functor._
 import cats.{Applicative, Eval, Foldable, MonoidK}
@@ -28,12 +28,12 @@ package object slf4j {
       if (levelEnabled) {
         val setContext =
           mdc.foldLeft(F.unit) { (ms, m) =>
-            ms *> F.delay(MDC.put(m.key, m.value))
+            ms >> F.delay(MDC.put(m.key, m.value))
           }
 
         val resetContext =
           mdc.foldLeft(F.unit) { (ms, m) =>
-            ms *> F.delay(MDC.remove(m.key)).void
+            ms >> F.delay(MDC.remove(m.key)).void
           }
 
         F.bracket(setContext) { _ =>

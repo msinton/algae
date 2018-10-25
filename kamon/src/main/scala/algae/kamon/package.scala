@@ -5,7 +5,7 @@ import algae.counting.CounterIncrement
 import algae.mtl.MonadLog
 import algae.syntax.counting._
 import cats.effect.Sync
-import cats.syntax.apply._
+import cats.syntax.flatMap._
 import cats.syntax.foldable._
 import cats.{Applicative, Foldable, Monoid}
 
@@ -24,7 +24,7 @@ package object kamon {
           .increment(e.times)
       }
 
-    ge.foldLeft(F.unit)(_ *> count(_))
+    ge.foldLeft(F.unit)(_ >> count(_))
   }
 
   def createCounting[F[_], G[_], E](monadLog: MonadLog[F, G[E]])(
