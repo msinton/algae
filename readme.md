@@ -22,7 +22,7 @@ To get started with [sbt][sbt], simply add the following lines to your `build.sb
 
 
 ```scala
-val algaeVersion = "0.1.0"
+val algaeVersion = "0.1.1"
 
 resolvers += Resolver.bintrayRepo("ovotech", "maven")
 
