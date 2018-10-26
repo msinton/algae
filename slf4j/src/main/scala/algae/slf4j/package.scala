@@ -4,7 +4,6 @@ import algae.logging.{LogEntry, LogLevel, MdcEntry}
 import algae.mtl.MonadLog
 import algae.syntax.logging._
 import cats.effect.Sync
-import cats.syntax.flatMap._
 import cats.syntax.foldable._
 import cats.syntax.functor._
 import cats.{Applicative, Eval, Foldable, MonoidK}
@@ -17,7 +16,7 @@ package object slf4j {
     G: Foldable[G],
     M: MdcEntry[M]
   ): (Eval[String], G[M], LogLevel) => F[Unit] =
-    (message, mdc, level) => {
+    (message, mdc, level) => F.suspend {
       val levelEnabled = level match {
         case LogLevel.Error => logger.isErrorEnabled
         case LogLevel.Warn  => logger.isWarnEnabled
@@ -26,24 +25,18 @@ package object slf4j {
       }
 
       if (levelEnabled) {
-        val setContext =
-          mdc.foldLeft(F.unit) { (ms, m) =>
-            ms >> F.delay(MDC.put(m.key, m.value))
-          }
+        val log = F.delay(level match {
+          case LogLevel.Error => logger.error(message.value)
+          case LogLevel.Warn  => logger.warn(message.value)
+          case LogLevel.Info  => logger.info(message.value)
+          case LogLevel.Debug => logger.debug(message.value)
+        })
 
-        val resetContext =
-          mdc.foldLeft(F.unit) { (ms, m) =>
-            ms >> F.delay(MDC.remove(m.key)).void
-          }
-
-        F.bracket(setContext) { _ =>
-          F.delay(level match {
-            case LogLevel.Error => logger.error(message.value)
-            case LogLevel.Warn  => logger.warn(message.value)
-            case LogLevel.Info  => logger.info(message.value)
-            case LogLevel.Debug => logger.debug(message.value)
-          })
-        }(_ => resetContext)
+        if(mdc.nonEmpty) {
+          val setContext = F.delay(mdc.foldLeft(())((_, m) => MDC.put(m.key, m.value)))
+          val resetContext = F.delay(mdc.foldLeft(())((_, m) => MDC.remove(m.key)))
+          F.bracket(setContext)(_ => log)(_ => resetContext)
+        } else log
       } else F.unit
     }
 
