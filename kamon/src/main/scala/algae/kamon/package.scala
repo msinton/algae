@@ -5,7 +5,6 @@ import algae.counting.CounterIncrement
 import algae.mtl.MonadLog
 import algae.syntax.counting._
 import cats.effect.Sync
-import cats.syntax.flatMap._
 import cats.syntax.foldable._
 import cats.{Applicative, Foldable, Monoid}
 
@@ -16,15 +15,20 @@ package object kamon {
     G: Foldable[G],
     E: CounterIncrement[E]
   ): F[Unit] = {
-    def count(e: E): F[Unit] =
-      F.delay {
-        Kamon
-          .counter(e.counterName)
-          .refine(e.tags)
-          .increment(e.times)
+    def count(e: E): Unit = {
+      val counter = {
+        val base = Kamon.counter(e.counterName)
+        val tags = e.tags
+
+        if (tags.nonEmpty)
+          base.refine(tags)
+        else base
       }
 
-    ge.foldLeft(F.unit)(_ >> count(_))
+      counter.increment(e.times)
+    }
+
+    F.delay(ge.foldLeft(())((_, e) => count(e)))
   }
 
   def createCounting[F[_], G[_], E](monadLog: MonadLog[F, G[E]])(
