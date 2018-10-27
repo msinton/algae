@@ -12,7 +12,7 @@ Algae is a new project under active development. Feedback and contributions are 
 ### Introduction
 Algae defines final tagless algebras around common capabilities, such as [`Logging`](#logging) and [`Counting`](#counting). The core library makes use of [cats][cats], [cats-mtl][cats-mtl], and [cats-effect][cats-effect], while modules use external libraries to implement, complement, and define extra algebras. Algae also defines supportive constructs like: type classes, immutable data, and pure functions.
 
-#### Contents
+### Contents
 1. [Getting Started](#getting-started)
 1. [Configuration](#configuration)
 1. [Counting](#counting)
