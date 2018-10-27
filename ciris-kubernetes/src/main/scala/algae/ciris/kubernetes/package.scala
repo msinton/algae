@@ -12,10 +12,11 @@ package object kubernetes {
   def createDefaultKubernetesConfig[F[_]](
     implicit F: Concurrent[F]
   ): F[KubernetesConfig[F]] =
-    for {
-      apiClient <- defaultApiClient[F]
-      registerAuth <- registerGcpAuthenticator[F]
-    } yield createKubernetesConfig(apiClient, registerAuth)
+    defaultApiClient[F].flatMap { apiClient =>
+      registerGcpAuthenticator[F].map { registerAuth =>
+        createKubernetesConfig(apiClient, registerAuth)
+      }
+    }
 
   def createKubernetesConfig[F[_]](
     apiClient: F[ApiClient],
