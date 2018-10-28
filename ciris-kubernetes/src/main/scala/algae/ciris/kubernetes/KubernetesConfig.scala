@@ -4,8 +4,9 @@ import algae.ciris.CirisConfig
 import ciris.kubernetes.SecretKey
 import ciris.{ConfigDecoder, ConfigEntry}
 
-trait KubernetesConfig[F[_]] extends CirisConfig[F] { self =>
-  final def secret(namespace: String): KubernetesNamespace[F] =
+trait KubernetesConfig[F[_]] extends CirisConfig[F] {
+  final def secret(namespace: String): KubernetesNamespace[F] = {
+    val self = this
     new KubernetesNamespace[F] {
       override def apply[A](name: String)(
         implicit decoder: ConfigDecoder[String, A]
@@ -20,6 +21,7 @@ trait KubernetesConfig[F[_]] extends CirisConfig[F] { self =>
       override def toString: String =
         s"KubernetesNamespace($namespace)"
     }
+  }
 
   def secret[A](namespace: String, name: String)(
     implicit decoder: ConfigDecoder[String, A]
