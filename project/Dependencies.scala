@@ -11,7 +11,7 @@ object Dependencies extends AutoPlugin {
     val kamon = "1.1.3"
     val kamonInfluxDb = "1.0.2"
     val kamonSystemMetrics = "1.0.0"
-    val kindProjector = "0.9.7"
+    val kindProjector = "0.9.8"
     val logback = "1.2.3"
     val scalaTest = "3.0.5"
     val slf4j = "1.7.25"
