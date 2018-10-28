@@ -7,7 +7,7 @@ object Dependencies extends AutoPlugin {
     val catsMtl = "0.4.0"
     val catsEffect = "1.0.0"
     val ciris = "0.11.0"
-    val cirisKubernetes = "0.7"
+    val cirisKubernetes = "0.8"
     val kamon = "1.1.3"
     val kamonInfluxDb = "1.0.2"
     val kamonSystemMetrics = "1.0.0"

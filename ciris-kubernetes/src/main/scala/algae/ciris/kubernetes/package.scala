@@ -1,6 +1,6 @@
 package algae.ciris
 
-import _root_.cats.effect.{Concurrent, Sync}
+import _root_.cats.effect.Sync
 import _root_.cats.syntax.flatMap._
 import _root_.cats.syntax.functor._
 import _root_.ciris._
@@ -10,29 +10,26 @@ import _root_.io.kubernetes.client.ApiClient
 
 package object kubernetes {
   def createDefaultKubernetesConfig[F[_]](
-    implicit F: Concurrent[F]
+    implicit F: Sync[F]
   ): F[KubernetesConfig[F]] =
-    defaultApiClient[F].flatMap { apiClient =>
-      registerGcpAuthenticator[F].map { registerAuth =>
-        createKubernetesConfig(apiClient, registerAuth)
-      }
+    registerGcpAuth[F].flatMap { _ =>
+      defaultApiClient[F].map(createKubernetesConfig[F])
     }
 
-  def createKubernetesConfig[F[_]](
-    apiClient: F[ApiClient],
-    registerAuth: F[Unit]
-  )(implicit F: Sync[F]): KubernetesConfig[F] =
+  def createKubernetesConfig[F[_]](apiClient: ApiClient)(
+    implicit F: Sync[F]
+  ): KubernetesConfig[F] =
     new KubernetesConfig[F] {
       def secret[A](namespace: String, name: String)(
         implicit decoder: ConfigDecoder[String, A]
       ): ConfigEntry[F, SecretKey, String, A] =
-        secretInNamespace(namespace, apiClient, registerAuth)
+        secretInNamespace(namespace, apiClient)
           .apply[A](name)
 
       def secret[A](namespace: String, name: String, key: String)(
         implicit decoder: ConfigDecoder[String, A]
       ): ConfigEntry[F, SecretKey, String, A] =
-        secretInNamespace(namespace, apiClient, registerAuth)
+        secretInNamespace(namespace, apiClient)
           .apply[A](name, key)
 
       override def env[A](key: String)(
