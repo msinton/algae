@@ -59,7 +59,6 @@ import cats.MonadError
 import cats.effect.IO
 import ciris.loadConfig
 import ciris.cats.effect._
-import ciris.syntax._
 
 final case class Config(appEnv: String, maxRetries: Int)
 
