@@ -22,7 +22,7 @@ To get started with [sbt][sbt], simply add the following lines to your `build.sb
 
 
 ```scala
-val algaeVersion = "0.1.4"
+val algaeVersion = "0.1.5"
 
 resolvers += Resolver.bintrayRepo("ovotech", "maven")
 
@@ -52,7 +52,6 @@ import cats.MonadError
 import cats.effect.IO
 import ciris.loadConfig
 import ciris.cats.effect._
-import ciris.syntax._
 
 final case class Config(appEnv: String, maxRetries: Int)
 
