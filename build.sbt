@@ -16,6 +16,7 @@ lazy val algae = project
     laws,
     ciris,
     `ciris-kubernetes`,
+    `fs2-kafka`,
     kamon,
     `kamon-influxdb`,
     `kamon-system-metrics`,
@@ -53,6 +54,7 @@ lazy val docs = project
   .dependsOn(
     core,
     `ciris-kubernetes`,
+    `fs2-kafka`,
     `kamon-system-metrics`,
     `kamon-influxdb`,
     slf4j
@@ -87,6 +89,16 @@ lazy val `ciris-kubernetes` = project
   .settings(commonSettings)
   .settings(cirisKubernetes, kindProjector)
   .dependsOn(ciris)
+
+lazy val `fs2-kafka` = project
+  .in(file("fs2-kafka"))
+  .settings(
+    moduleName := "algae-fs2-kafka",
+    name := moduleName.value
+  )
+  .settings(commonSettings)
+  .settings(fs2Kafka)
+  .dependsOn(core)
 
 lazy val kamon = project
   .in(file("kamon"))
