@@ -8,6 +8,7 @@ object Dependencies extends AutoPlugin {
     val catsEffect = "1.0.0"
     val ciris = "0.12.0"
     val cirisKubernetes = "0.9"
+    val fs2Kafka = "0.16.4"
     val kamon = "1.1.3"
     val kamonInfluxDb = "1.0.2"
     val kamonSystemMetrics = "1.0.0"
@@ -69,6 +70,12 @@ object Dependencies extends AutoPlugin {
     val cirisKubernetes: Seq[Def.Setting[_]] = Def.settings(
       libraryDependencies ++= Seq(
         "com.ovoenergy" %% "ciris-kubernetes" % Versions.cirisKubernetes
+      )
+    )
+
+    val fs2Kafka: Seq[Def.Setting[_]] = Def.settings(
+      libraryDependencies ++= Seq(
+        "com.ovoenergy" %% "fs2-kafka" % Versions.fs2Kafka
       )
     )
 
