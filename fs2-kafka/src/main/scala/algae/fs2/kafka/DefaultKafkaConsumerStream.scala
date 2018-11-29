@@ -6,7 +6,7 @@ import fs2.kafka.ConsumerSettings
 
 import scala.concurrent.ExecutionContext
 
-final class DefaultFs2KafkaConsumerStream[F[_]] private[kafka] (
+final class DefaultKafkaConsumerStream[F[_]] private[kafka] (
   private val F: ConcurrentEffect[F]
 ) extends AnyVal {
   def using[K, V](
@@ -14,6 +14,6 @@ final class DefaultFs2KafkaConsumerStream[F[_]] private[kafka] (
   )(
     implicit context: ContextShift[F],
     timer: Timer[F]
-  ): Stream[F, Fs2KafkaConsumer[F, K, V]] =
-    createDefaultFs2KafkaConsumerStream[F, K, V](settings)(F, context, timer)
+  ): Stream[F, KafkaConsumer[F, K, V]] =
+    createDefaultKafkaConsumerStream[F, K, V](settings)(F, context, timer)
 }

@@ -174,27 +174,27 @@ kamonSetup.use { _ =>
 The example above immediately counts `ApplicationStarted` and then counts `SaidHello` twice when `dispatchCounts` is invoked. After dispatching counts with `dispatchCounts`, accumulated counts are cleared. It's worth noting that the counter increments are stored in a separate `Ref`, so even if part of your program fails, any counts are still available.
 
 ### Kafka
-The `KafkaConsumer` and `KafkaProducer` algebras implement basic support for consuming and producing records from Kafka. The `algae-fs2-kafka` module provides `Fs2KafkaConsumer` and `Fs2KafkaProducer` algebras and implements them using [fs2-kafka][fs2-kafka].
+The `algae-fs2-kafka` module provides `KafkaConsumer` and `KafkaProducer` algebras and implements them using [fs2-kafka][fs2-kafka].
 
-To create a `Fs2KafkaConsumer`, you can use these functions:
+To create a `KafkaConsumer`, you can use these functions:
 
-- `createFs2KafkaConsumerStream[F, K, V](settings)`, or
+- `createKafkaConsumerStream[F, K, V](settings)`, or
 
-- `createFs2KafkaConsumerStream[F].using(settings)`,
+- `createKafkaConsumerStream[F].using(settings)`,
 
 or one of the following, where a new default `ExecutionContext` will be created.
 
-- `createDefaultFs2KafkaConsumerStream[F, K, V](settings)`, or
+- `createDefaultKafkaConsumerStream[F, K, V](settings)`, or
 
-- `createDefaultFs2KafkaConsumerStream[F].using(settings)`.
+- `createDefaultKafkaConsumerStream[F].using(settings)`.
 
-To create a `Fs2KafkaProducer`, use one of the following functions.
+To create a `KafkaProducer`, use one of the following functions.
 
-- `createFs2KafkaProducerStream[F, K, V](settings)`, or
+- `createKafkaProducerStream[F, K, V](settings)`, or
 
-- `createFs2KafkaProducerStream[F].using(settings)`.
+- `createKafkaProducerStream[F].using(settings)`.
 
-Following is an example of how to create a `Fs2KafkaConsumer` and `Fs2KafkaProducer`.
+Following is an example of how to create a `KafkaConsumer` and `KafkaProducer`.
 
 ```tut:silent
 import cats.data.NonEmptyList
@@ -237,8 +237,8 @@ object Main extends IOApp {
 
     val stream =
       for {
-        consumer <- createDefaultFs2KafkaConsumerStream[IO].using(consumerSettings)
-        producer <- createFs2KafkaProducerStream[IO].using(producerSettings)
+        consumer <- createDefaultKafkaConsumerStream[IO].using(consumerSettings)
+        producer <- createKafkaProducerStream[IO].using(producerSettings)
         _ <- consumer.subscribe(topics)
         _ <- consumer.stream
           .mapAsync(25)(message =>
