@@ -15,6 +15,7 @@ Algae defines final tagless algebras around common capabilities, such as [`Loggi
 1. [Getting Started](#getting-started)
 1. [Configuration](#configuration)
 1. [Counting](#counting)
+1. [Kafka](#kafka)
 1. [Logging](#logging)
 
 ### Getting Started
@@ -22,7 +23,7 @@ To get started with [sbt][sbt], simply add the following lines to your `build.sb
 
 
 ```scala
-val algaeVersion = "0.1.5"
+val algaeVersion = "0.1.6"
 
 resolvers += Resolver.bintrayRepo("ovotech", "maven")
 
@@ -163,6 +164,91 @@ kamonSetup.use { _ =>
 
 The example above immediately counts `ApplicationStarted` and then counts `SaidHello` twice when `dispatchCounts` is invoked. After dispatching counts with `dispatchCounts`, accumulated counts are cleared. It's worth noting that the counter increments are stored in a separate `Ref`, so even if part of your program fails, any counts are still available.
 
+### Kafka
+The `algae-fs2-kafka` module provides `KafkaConsumer` and `KafkaProducer` algebras and implements them using [fs2-kafka][fs2-kafka].
+
+To create a `KafkaConsumer`, you can use these functions:
+
+- `createKafkaConsumerStream[F, K, V](settings)`, or
+
+- `createKafkaConsumerStream[F].using(settings)`,
+
+or one of the following, where a new default `ExecutionContext` will be created.
+
+- `createDefaultKafkaConsumerStream[F, K, V](settings)`, or
+
+- `createDefaultKafkaConsumerStream[F].using(settings)`.
+
+To create a `KafkaProducer`, use one of the following functions.
+
+- `createKafkaProducerStream[F, K, V](settings)`, or
+
+- `createKafkaProducerStream[F].using(settings)`.
+
+Following is an example of how to create a `KafkaConsumer` and `KafkaProducer`.
+
+```scala
+import cats.data.NonEmptyList
+import cats.effect.{ExitCode, IO, IOApp}
+import cats.syntax.functor._
+import cats.syntax.traverse._
+import algae.fs2.kafka._
+import _root_.fs2.kafka._
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
+import org.apache.kafka.clients.producer.{ProducerConfig, ProducerRecord}
+import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+
+object Main extends IOApp {
+  override def run(args: List[String]): IO[ExitCode] = {
+    val consumerSettings = (executionContext: ExecutionContext) =>
+      ConsumerSettings(
+        keyDeserializer = new StringDeserializer,
+        valueDeserializer = new StringDeserializer,
+        executionContext = executionContext
+      )
+      .withAutoOffsetReset(AutoOffsetReset.Earliest)
+      .withBootstrapServers("localhost")
+      .withGroupId("group")
+
+    val producerSettings =
+      ProducerSettings(
+        keySerializer = new StringSerializer,
+        valueSerializer = new StringSerializer,
+      )
+      .withBootstrapServers("localhost")
+
+    val topics =
+      NonEmptyList.one("topic")
+
+    def processRecord(record: ConsumerRecord[String, String]): IO[(String, String)] =
+      IO.pure(record.key -> record.value)
+
+    val stream =
+      for {
+        consumer <- createDefaultKafkaConsumerStream[IO].using(consumerSettings)
+        producer <- createKafkaProducerStream[IO].using(producerSettings)
+        _ <- consumer.subscribe(topics)
+        _ <- consumer.stream
+          .mapAsync(25)(message =>
+            processRecord(message.record)
+              .map {
+                case (key, value) =>
+                  val record = new ProducerRecord("topic", key, value)
+                  ProducerMessage.single(record, message.committableOffset)
+              })
+            .evalMap(producer.produceBatched)
+            .map(_.map(_.passthrough))
+            .to(commitBatchWithinF(500, 15.seconds))
+      } yield ()
+
+    stream.compile.drain.as(ExitCode.Success)
+  }
+}
+```
+
 ### Logging
 The `Logging` algebra implements log accumulation and dispatching of log messages, with support for diagnostic contexts. This is done via the `MonadLog` type class, which is a thin wrapper around `MonadState`, with additional laws governing log accumulation. If you're working with a `Sync[F]` context, a `Ref[F]` can be used to implement `MonadLog`, and there's a `createMonadLog` helper function for exactly that. If log accumulation isn't necessary, `LoggingNow` can be used.
 
@@ -246,5 +332,6 @@ The example above immediately logs `ApplicationStarted` and then logs a combined
 [cats-effect]: https://typelevel.org/cats-effect
 [cats-mtl]: https://github.com/typelevel/cats-mtl
 [cats]: https://typelevel.org/cats
+[fs2-kafka]: https://github.com/ovotech/fs2-kafka
 [sbt]: https://www.scala-sbt.org
 [scala]: https://scala-lang.org
