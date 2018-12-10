@@ -57,14 +57,14 @@ package object kafka {
   ): Stream[F, KafkaProducer[F, K, V]] =
     fs2.kafka.producerStream[F, K, V](settings).map { producer =>
       new KafkaProducer[F, K, V] {
-        override def produceBatched[P](
-          message: ProducerMessage[K, V, P]
-        ): F[F[ProducerResult[K, V, P]]] =
+        override def produceBatched[G[_], P](
+          message: ProducerMessage[G, K, V, P]
+        ): F[F[ProducerResult[G, K, V, P]]] =
           producer.produceBatched(message)
 
-        override def produce[P](
-          message: ProducerMessage[K, V, P]
-        ): F[ProducerResult[K, V, P]] =
+        override def produce[G[_], P](
+          message: ProducerMessage[G, K, V, P]
+        ): F[ProducerResult[G, K, V, P]] =
           producer.produce(message)
       }
     }
