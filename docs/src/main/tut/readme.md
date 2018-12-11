@@ -186,6 +186,16 @@ The example above immediately counts `ApplicationStarted` and then counts `SaidH
 ### Kafka
 The `algae-fs2-kafka` module provides `KafkaConsumer` and `KafkaProducer` algebras and implements them using [fs2-kafka][fs2-kafka].
 
+```tut:passthrough
+println(
+s"""
+ |```scala
+ |libraryDependencies += "com.ovoenergy" %% "algae-fs2-kafka" % algaeVersion
+ |```
+ """
+)
+```
+
 To create a `KafkaConsumer`, you can use these functions:
 
 - `createKafkaConsumerStream[F, K, V](settings)`, or
