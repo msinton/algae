@@ -37,7 +37,7 @@ s"""
 ```
 
 ### Configuration
-The `Config` algebra implements basic configuration using environment variables and system properties. An implementation using Ciris is defined as `CirisConfig`, and there's a `KubernetesConfig` algebra for Kubernetes secrets support. Following are the relevant modules and the lines you need for `build.sbt` to include them in your project.
+The `Config` algebra implements basic configuration using environment variables and system properties. An implementation using Ciris is defined as `CirisConfig`, and there's a `KubernetesConfig` algebra for Kubernetes secrets support. There is also an `AivenKafkaConfig` algebra using [ciris-aiven-kafka](https://github.com/ovotech/ciris-aiven-kafka). Following are the relevant modules and the lines you need for `build.sbt` to include them in your project.
 
 ```tut:passthrough
 println(
@@ -45,7 +45,8 @@ s"""
  |```scala
  |libraryDependencies ++= Seq(
  |  "com.ovoenergy" %% "algae-ciris" % algaeVersion,
- |  "com.ovoenergy" %% "algae-ciris-kubernetes" % algaeVersion
+ |  "com.ovoenergy" %% "algae-ciris-kubernetes" % algaeVersion,
+ |  "com.ovoenergy" %% "algae-ciris-aiven-kafka" % algaeVersion
  |)
  |```
  """
@@ -103,6 +104,15 @@ def loadConfiguration[F[_]](config: KubernetesConfig[F])(
 
 createDefaultKubernetesConfig[IO].
   flatMap(loadConfiguration[IO])
+```
+
+To create an instance of `AivenKafkaConfig`, simply `import algae.ciris.aiven.kafka._` and use `createAivenKafkaConfig`.
+
+```tut:silent
+import algae.ciris.aiven.kafka._
+
+val aivenKafkaConfig: AivenKafkaConfig[IO] =
+  createAivenKafkaConfig[IO]
 ```
 
 ### Counting

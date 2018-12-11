@@ -15,6 +15,7 @@ lazy val algae = project
     core,
     laws,
     ciris,
+    `ciris-aiven-kafka`,
     `ciris-kubernetes`,
     `fs2-kafka`,
     kamon,
@@ -53,6 +54,7 @@ lazy val docs = project
   .enablePlugins(BuildInfoPlugin, TutPlugin)
   .dependsOn(
     core,
+    `ciris-aiven-kafka`,
     `ciris-kubernetes`,
     `fs2-kafka`,
     `kamon-system-metrics`,
@@ -79,6 +81,16 @@ lazy val ciris = project
   .settings(commonSettings)
   .settings(cirisCore, cirisCatsEffect, kindProjector)
   .dependsOn(core)
+
+lazy val `ciris-aiven-kafka` = project
+  .in(file("ciris-aiven-kafka"))
+  .settings(
+    moduleName := "algae-ciris-aiven-kafka",
+    name := moduleName.value
+  )
+  .settings(commonSettings)
+  .settings(cirisAivenKafka)
+  .dependsOn(ciris)
 
 lazy val `ciris-kubernetes` = project
   .in(file("ciris-kubernetes"))
