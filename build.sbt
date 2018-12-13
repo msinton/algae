@@ -23,6 +23,7 @@ lazy val algae = project
     `kamon-system-metrics`,
     slf4j,
     logback,
+    sqs,
     tests
   )
 
@@ -59,7 +60,8 @@ lazy val docs = project
     `fs2-kafka`,
     `kamon-system-metrics`,
     `kamon-influxdb`,
-    slf4j
+    slf4j,
+    sqs
   )
 
 lazy val laws = project
@@ -161,6 +163,16 @@ lazy val logback = project
   .settings(commonSettings)
   .settings(logbackClassic)
   .dependsOn(slf4j)
+
+lazy val sqs = project
+  .in(file("sqs"))
+  .settings(
+    moduleName := "algae-sqs",
+    name := moduleName.value
+  )
+  .settings(commonSettings)
+  .settings(awsSqs)
+  .dependsOn(core)
 
 lazy val tests = project
   .in(file("tests"))
