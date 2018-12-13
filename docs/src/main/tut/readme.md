@@ -18,6 +18,7 @@ Algae defines final tagless algebras around common capabilities, such as [`Loggi
 1. [Counting](#counting)
 1. [Kafka](#kafka)
 1. [Logging](#logging)
+1. [Sqs](#sqs)
 
 ### Getting Started
 To get started with [sbt][sbt], simply add the following lines to your `build.sbt` file.
@@ -360,9 +361,78 @@ for {
 
 The example above immediately logs `ApplicationStarted` and then logs a combined message containing `HelloWorld` twice. After dispatching logs with `dispatchLogs`, accumulated logs are cleared. It's worth noting that the log entries are stored in a separate `Ref`, so even if part of your program fails, any logged messages are still available.
 
+### Sqs
+The `Sqs` module provides the `SqsConsumer` and `SqsProducer` algebras.
+
+```tut:passthrough
+println(
+s"""
+ |```scala
+ |libraryDependencies ++= Seq(
+ |  "com.ovoenergy" %% "algae-sqs" % algaeVersion
+ |)
+ |```
+ """
+)
+```
+
+Here an example of how to use the `SqsProducer` and `SqsConsumer`.
+
+```tut:silent
+import algae.sqs._
+import cats.effect.{ExitCode, IO, IOApp}
+import cats.instances.list._
+import cats.syntax.traverse._
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.regions.Regions
+import com.amazonaws.services.sqs.model.SendMessageResult
+import scala.concurrent.duration._
+
+object Main extends IOApp {
+  val credentials = new BasicAWSCredentials(
+    "ACCESS_KEY_ID",
+    "SECRET_ACCESS_KEY"
+  )
+  
+  val region: Regions = Regions.EU_WEST_1
+  
+  val queueUrl = "https://sqs.us-east-2.amazonaws.com/123456789012/MyQueue"
+  
+  val producer = createDefaultSqsProducer[IO](
+    credentials,
+    region,
+    queueUrl
+  )
+   
+  val consumer = createDefaultSqsConsumer[IO](
+    credentials,
+    region,
+    queueUrl
+  )
+      
+  override def run(args: List[String]): IO[ExitCode] = producer.use { producer =>
+    consumer.use { consumer =>
+      for {
+        _ <- producer.send("MyMessage")
+        messages <- consumer
+          .messages
+          .groupWithin(Int.MaxValue, 1.second)
+          .compile
+          .toList
+          .map(_.flatMap(_.toList))
+        _ <- messages.traverse[IO, Unit](message => consumer.commit(message.getReceiptHandle))
+      } yield ExitCode.Success
+    }
+  }
+}
+```
+
+
+
 [cats-effect]: https://typelevel.org/cats-effect
 [cats-mtl]: https://github.com/typelevel/cats-mtl
 [cats]: https://typelevel.org/cats
 [fs2-kafka]: https://github.com/ovotech/fs2-kafka
 [sbt]: https://www.scala-sbt.org
 [scala]: https://scala-lang.org
+[sqs]: https://aws.amazon.com/sqs/
