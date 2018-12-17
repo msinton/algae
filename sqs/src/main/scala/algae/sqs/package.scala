@@ -17,8 +17,8 @@ package object sqs {
     implicit F: Async[F]
   ): Resource[F, SqsConsumer[F]] =
     createSqsClient(credentials, region, queueUrl).map { sqsClient =>
-        createConsumer(sqsClient, queueUrl)
-      }
+      createConsumer(sqsClient, queueUrl)
+    }
 
   def createSqsProducer[F[_]](
     credentials: AWSCredentials,
@@ -28,21 +28,7 @@ package object sqs {
     implicit F: Async[F]
   ): Resource[F, SqsProducer[F]] =
     createSqsClient(credentials, region, queueUrl).map { sqsClient =>
-        new SqsProducerImpl(sqsClient, queueUrl)
-    }
-
-  def createSqsConsumerAndProducer[F[_]](
-    credentials: AWSCredentials,
-    region: Regions,
-    queueUrl: String
-  )(
-    implicit F: Async[F]
-  ): Resource[F, (SqsConsumer[F], SqsProducer[F])] =
-    createSqsClient(credentials, region, queueUrl).map { sqsClient =>
-      (
-        new SqsConsumerImpl(sqsClient, queueUrl),
-        new SqsProducerImpl(sqsClient, queueUrl)
-      )
+      new SqsProducerImpl(sqsClient, queueUrl)
     }
 
   def createConsumer[F[_]](
