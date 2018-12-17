@@ -1,38 +1,59 @@
 package algae.sqs
 
-import cats.effect.Sync
-import cats.syntax.functor._
-import com.amazonaws.services.sqs.AmazonSQS
-import com.amazonaws.services.sqs.model.{Message, ReceiveMessageRequest}
+import cats.effect.Async
+import com.amazonaws.handlers.AsyncHandler
+import com.amazonaws.services.sqs.AmazonSQSAsync
+import com.amazonaws.services.sqs.model._
 import fs2._
 
 import scala.collection.JavaConverters._
 
-final case class SqsConsumerImpl[F[_]](
-  sqs: AmazonSQS,
+private[this] final class SqsConsumerImpl[F[_]](
+  sqs: AmazonSQSAsync,
   queueUrl: String
 )(
-  implicit F: Sync[F]
+  implicit F: Async[F]
 ) extends SqsConsumer[F] {
 
   def messages: Stream[F, Message] =
     Stream.repeatEval(request).flatMap(Stream.chunk)
 
   private def request: F[Chunk[Message]] =
-    F.delay {
-        sqs
-          .receiveMessage(
-            new ReceiveMessageRequest()
-              .withQueueUrl(queueUrl)
-          )
-          .getMessages
-      }
-      .map(messages => Chunk(messages.asScala: _*))
+    F.async { cb =>
+      sqs.receiveMessageAsync(
+        queueUrl,
+        new AsyncHandler[ReceiveMessageRequest, ReceiveMessageResult] {
+          override def onSuccess(
+            request: ReceiveMessageRequest,
+            result: ReceiveMessageResult
+          ): Unit = cb(Right(Chunk(result.getMessages.asScala: _*)))
+
+          override def onError(
+            error: Exception
+          ): Unit = cb(Left(error))
+        }
+      )
+
+      ()
+    }
 
   def commit(receiptHandle: String): F[Unit] =
-    F.delay {
-      sqs.deleteMessage(queueUrl, receiptHandle)
-    }.void
+    F.async { cb =>
+      sqs.deleteMessageAsync(
+        queueUrl,
+        receiptHandle,
+        new AsyncHandler[DeleteMessageRequest, DeleteMessageResult] {
+          override def onSuccess(
+            request: DeleteMessageRequest,
+            result: DeleteMessageResult
+          ): Unit = cb(Right(()))
+
+          override def onError(
+            error: Exception
+          ): Unit = cb(Left(error))
+        }
+      )
+
+      ()
+    }
 }
-
-

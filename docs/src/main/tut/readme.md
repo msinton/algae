@@ -362,21 +362,19 @@ for {
 The example above immediately logs `ApplicationStarted` and then logs a combined message containing `HelloWorld` twice. After dispatching logs with `dispatchLogs`, accumulated logs are cleared. It's worth noting that the log entries are stored in a separate `Ref`, so even if part of your program fails, any logged messages are still available.
 
 ### Sqs
-The `Sqs` module provides the `SqsConsumer` and `SqsProducer` algebras.
+The `algae-sqs` module provides the `SqsConsumer` and `SqsProducer` algebras.
 
 ```tut:passthrough
 println(
 s"""
  |```scala
- |libraryDependencies ++= Seq(
- |  "com.ovoenergy" %% "algae-sqs" % algaeVersion
- |)
+ |libraryDependencies += "com.ovoenergy" %% "algae-sqs" % algaeVersion
  |```
  """
 )
 ```
 
-Here an example of how to use the `SqsProducer` and `SqsConsumer`.
+Here is an example of how to use the `SqsProducer` and `SqsConsumer`.
 
 ```tut:silent
 import algae.sqs._
@@ -398,13 +396,13 @@ object Main extends IOApp {
   
   val queueUrl = "https://sqs.us-east-2.amazonaws.com/123456789012/MyQueue"
   
-  val producer = createDefaultSqsProducer[IO](
+  val producer = createSqsProducer[IO](
     credentials,
     region,
     queueUrl
   )
    
-  val consumer = createDefaultSqsConsumer[IO](
+  val consumer = createSqsConsumer[IO](
     credentials,
     region,
     queueUrl
@@ -416,11 +414,11 @@ object Main extends IOApp {
         _ <- producer.send("MyMessage")
         messages <- consumer
           .messages
-          .groupWithin(Int.MaxValue, 1.second)
+          .take(1)
+          .map(_.getReceiptHandle)
+          .evalMap(consumer.commit)
           .compile
-          .toList
-          .map(_.flatMap(_.toList))
-        _ <- messages.traverse[IO, Unit](message => consumer.commit(message.getReceiptHandle))
+          .drain
       } yield ExitCode.Success
     }
   }
