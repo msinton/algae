@@ -206,7 +206,8 @@ lazy val scalaSettings = Seq(
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     "-Xfuture",
-    "-Ywarn-unused"
+    "-Ywarn-unused",
+    "-Ypartial-unification"
   ),
   scalacOptions in (Compile, console) --= Seq("-Xlint", "-Ywarn-unused"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,

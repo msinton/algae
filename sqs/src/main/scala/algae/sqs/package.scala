@@ -1,6 +1,7 @@
 package algae
 
 import cats.effect.{Async, Resource, Sync}
+import cats.syntax.functor._
 import com.amazonaws.auth.{AWSCredentials, AWSStaticCredentialsProvider}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.regions.Regions
@@ -15,9 +16,8 @@ package object sqs {
   )(
     implicit F: Async[F]
   ): Resource[F, SqsConsumer[F]] =
-    createSqsClient(credentials, region, queueUrl)
-      .flatMap { sqsClient =>
-        Resource.pure(createConsumer(sqsClient, queueUrl))
+    createSqsClient(credentials, region, queueUrl).map { sqsClient =>
+        createConsumer(sqsClient, queueUrl)
       }
 
   def createSqsProducer[F[_]](
@@ -27,10 +27,9 @@ package object sqs {
   )(
     implicit F: Async[F]
   ): Resource[F, SqsProducer[F]] =
-    createSqsClient(credentials, region, queueUrl)
-      .flatMap { sqsClient =>
-        Resource.pure(new SqsProducerImpl(sqsClient, queueUrl))
-      }
+    createSqsClient(credentials, region, queueUrl).map { sqsClient =>
+        new SqsProducerImpl(sqsClient, queueUrl)
+    }
 
   def createSqsConsumerAndProducer[F[_]](
     credentials: AWSCredentials,
@@ -39,13 +38,12 @@ package object sqs {
   )(
     implicit F: Async[F]
   ): Resource[F, (SqsConsumer[F], SqsProducer[F])] =
-    createSqsClient(credentials, region, queueUrl)
-      .flatMap { sqsClient =>
-        Resource.pure((
-          new SqsConsumerImpl(sqsClient, queueUrl),
-          new SqsProducerImpl(sqsClient, queueUrl)
-        ))
-      }
+    createSqsClient(credentials, region, queueUrl).map { sqsClient =>
+      (
+        new SqsConsumerImpl(sqsClient, queueUrl),
+        new SqsProducerImpl(sqsClient, queueUrl)
+      )
+    }
 
   def createConsumer[F[_]](
     sqsClient: AmazonSQSAsync,
