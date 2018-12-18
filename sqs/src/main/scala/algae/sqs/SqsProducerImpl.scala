@@ -9,7 +9,7 @@ private[this] final class SqsProducerImpl[F[_]](
   sqs: AmazonSQSAsync,
   queueUrl: String
 )(
-  implicit F: Async[F],
+  implicit F: Async[F]
 ) extends SqsProducer[F] {
 
   override def send(message: String): F[SendMessageResult] =
