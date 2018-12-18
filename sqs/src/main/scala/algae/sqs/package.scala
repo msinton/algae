@@ -1,6 +1,6 @@
 package algae
 
-import cats.effect.{Async, Resource, Sync}
+import cats.effect.{Async, Concurrent, Resource}
 import cats.syntax.functor._
 import com.amazonaws.auth.{AWSCredentials, AWSStaticCredentialsProvider}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
@@ -14,7 +14,7 @@ package object sqs {
     region: Regions,
     queueUrl: String
   )(
-    implicit F: Async[F]
+    implicit F: Concurrent[F]
   ): Resource[F, SqsConsumer[F]] =
     createSqsClient(credentials, region, queueUrl).map { sqsClient =>
       createSqsConsumer(sqsClient, queueUrl)
@@ -25,7 +25,7 @@ package object sqs {
     region: Regions,
     queueUrl: String
   )(
-    implicit F: Async[F]
+    implicit F: Concurrent[F]
   ): Resource[F, SqsProducer[F]] =
     createSqsClient(credentials, region, queueUrl).map { sqsClient =>
       new SqsProducerImpl(sqsClient, queueUrl)
@@ -52,7 +52,7 @@ package object sqs {
     region: Regions,
     queueUrl: String
   )(
-    implicit F: Sync[F]
+    implicit F: Concurrent[F]
   ): Resource[F, AmazonSQSAsync] = {
     Resource.make {
       F.delay {
@@ -70,7 +70,9 @@ package object sqs {
           .build()
       }
     } { sqsClient =>
-      F.delay(sqsClient.shutdown())
+      F.start(F.delay(sqsClient.shutdown()))
+        .map(_.join)
+        .void
     }
   }
 }
