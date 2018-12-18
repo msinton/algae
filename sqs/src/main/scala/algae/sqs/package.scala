@@ -17,7 +17,7 @@ package object sqs {
     implicit F: Async[F]
   ): Resource[F, SqsConsumer[F]] =
     createSqsClient(credentials, region, queueUrl).map { sqsClient =>
-      createConsumer(sqsClient, queueUrl)
+      createSqsConsumer(sqsClient, queueUrl)
     }
 
   def createSqsProducer[F[_]](
@@ -31,7 +31,7 @@ package object sqs {
       new SqsProducerImpl(sqsClient, queueUrl)
     }
 
-  def createConsumer[F[_]](
+  def createSqsConsumer[F[_]](
     sqsClient: AmazonSQSAsync,
     queueUrl: String
   )(
@@ -39,7 +39,7 @@ package object sqs {
   ): SqsConsumer[F] =
     new SqsConsumerImpl(sqsClient, queueUrl)
 
-  def createProducer[F[_]](
+  def createSqsProducer[F[_]](
     sqsClient: AmazonSQSAsync,
     queueUrl: String
   )(
