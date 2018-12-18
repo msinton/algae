@@ -16,7 +16,7 @@ package object sqs {
   )(
     implicit F: Concurrent[F]
   ): Resource[F, SqsConsumer[F]] =
-    createSqsClient(credentials, region, queueUrl).map { sqsClient =>
+    createSqsClient(credentials, region, queueUrl, _.build).map { sqsClient =>
       createSqsConsumer(sqsClient, queueUrl)
     }
 
@@ -27,7 +27,7 @@ package object sqs {
   )(
     implicit F: Concurrent[F]
   ): Resource[F, SqsProducer[F]] =
-    createSqsClient(credentials, region, queueUrl).map { sqsClient =>
+    createSqsClient(credentials, region, queueUrl, _.build).map { sqsClient =>
       new SqsProducerImpl(sqsClient, queueUrl)
     }
 
@@ -50,24 +50,26 @@ package object sqs {
   def createSqsClient[F[_]](
     credentials: AWSCredentials,
     region: Regions,
-    queueUrl: String
+    queueUrl: String,
+    configureBuilder: AmazonSQSAsyncClientBuilder => AmazonSQSAsync
   )(
     implicit F: Concurrent[F]
   ): Resource[F, AmazonSQSAsync] = {
     Resource.make {
       F.delay {
-        AmazonSQSAsyncClientBuilder
-          .standard()
-          .withCredentials(
-            new AWSStaticCredentialsProvider(credentials)
-          )
-          .withEndpointConfiguration(
-            new EndpointConfiguration(
-              queueUrl,
-              region.getName
+        configureBuilder(
+          AmazonSQSAsyncClientBuilder
+            .standard()
+            .withCredentials(
+              new AWSStaticCredentialsProvider(credentials)
             )
-          )
-          .build()
+            .withEndpointConfiguration(
+              new EndpointConfiguration(
+                queueUrl,
+                region.getName
+              )
+            )
+        )
       }
     } { sqsClient =>
       F.start(F.delay(sqsClient.shutdown()))
