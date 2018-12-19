@@ -26,7 +26,7 @@ private[this] final class SqsConsumerImpl[F[_]](
           override def onSuccess(
             request: ReceiveMessageRequest,
             result: ReceiveMessageResult
-          ): Unit = cb(Right(Chunk(result.getMessages.asScala: _*)))
+          ): Unit = cb(Right(Chunk.buffer(result.getMessages.asScala)))
 
           override def onError(
             error: Exception
