@@ -2,7 +2,13 @@ package algae
 
 import cats.effect.{Async, Concurrent, Resource}
 import cats.syntax.functor._
-import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider, AWSStaticCredentialsProvider}
+import cats.syntax.flatMap._
+import com.amazonaws.auth.{
+  AWSCredentials,
+  AWSCredentialsProvider,
+  AWSStaticCredentialsProvider,
+  BasicAWSCredentials
+}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.{AmazonSQSAsync, AmazonSQSAsyncClientBuilder}
@@ -16,14 +22,10 @@ package object sqs {
   )(
     implicit F: Concurrent[F]
   ): Resource[F, SqsConsumer[F]] =
-    createSqsClient(
-      credentialsProvider = credentialsProvider,
-      region = region,
-      queueUrl = queueUrl,
-      configureBuilder = _.build()
-    ).map { sqsClient =>
-      createSqsConsumer(sqsClient, queueUrl)
-    }
+    createSqsClient(credentialsProvider, region, queueUrl)
+      .map { sqsClient =>
+        createSqsConsumer(sqsClient, queueUrl)
+      }
 
   def createSqsConsumer[F[_]](
     credentials: AWSCredentials,
@@ -32,14 +34,10 @@ package object sqs {
   )(
     implicit F: Concurrent[F]
   ): Resource[F, SqsConsumer[F]] =
-    createSqsClient(
-      credentials = credentials,
-      region = region,
-      queueUrl = queueUrl,
-      configureBuilder = _.build()
-    ).map { sqsClient =>
-      createSqsConsumer(sqsClient, queueUrl)
-    }
+    createSqsClient(toCredentialsProvider(credentials), region, queueUrl)
+      .map { sqsClient =>
+        createSqsConsumer(sqsClient, queueUrl)
+      }
 
   def createSqsProducer[F[_]](
     credentialsProvider: AWSCredentialsProvider,
@@ -48,14 +46,10 @@ package object sqs {
   )(
     implicit F: Concurrent[F]
   ): Resource[F, SqsProducer[F]] =
-    createSqsClient(
-      credentialsProvider = credentialsProvider,
-      region = region,
-      queueUrl = queueUrl,
-      configureBuilder = _.build()
-    ).map { sqsClient =>
-      new SqsProducerImpl(sqsClient, queueUrl)
-    }
+    createSqsClient(credentialsProvider, region, queueUrl)
+      .map { sqsClient =>
+        new SqsProducerImpl(sqsClient, queueUrl)
+      }
 
   def createSqsProducer[F[_]](
     credentials: AWSCredentials,
@@ -64,14 +58,10 @@ package object sqs {
   )(
     implicit F: Concurrent[F]
   ): Resource[F, SqsProducer[F]] =
-    createSqsClient(
-      credentials = credentials,
-      region = region,
-      queueUrl = queueUrl,
-      configureBuilder = _.build()
-    ).map { sqsClient =>
-      new SqsProducerImpl(sqsClient, queueUrl)
-    }
+    createSqsClient(toCredentialsProvider(credentials), region, queueUrl)
+      .map { sqsClient =>
+        new SqsProducerImpl(sqsClient, queueUrl)
+      }
 
   def createSqsConsumer[F[_]](
     sqsClient: AmazonSQSAsync,
@@ -86,50 +76,42 @@ package object sqs {
     queueUrl: String
   )(
     implicit F: Async[F]
-  ): SqsProducer[F] =
-    new SqsProducerImpl(sqsClient, queueUrl)
+  ): SqsProducer[F] = new SqsProducerImpl(sqsClient, queueUrl)
 
   def createSqsClient[F[_]](
-    credentials: AWSCredentials,
-    region: Regions,
-    queueUrl: String,
-    configureBuilder: AmazonSQSAsyncClientBuilder => AmazonSQSAsync
-  )(
-    implicit F: Concurrent[F]
-  ): Resource[F, AmazonSQSAsync] =
-    createSqsClient(
-      new AWSStaticCredentialsProvider(credentials),
-      region,
-      queueUrl,
-      configureBuilder
-    )
-
-  def createSqsClient[F[_]](
-    credentialsProvider: AWSCredentialsProvider,
-    region: Regions,
-    queueUrl: String,
-    configureBuilder: AmazonSQSAsyncClientBuilder => AmazonSQSAsync
+    build: AmazonSQSAsyncClientBuilder => AmazonSQSAsync
   )(
     implicit F: Concurrent[F]
   ): Resource[F, AmazonSQSAsync] = {
     Resource.make {
-      F.delay {
-        configureBuilder(
-          AmazonSQSAsyncClientBuilder
-            .standard()
-            .withCredentials(credentialsProvider)
-            .withEndpointConfiguration(
-              new EndpointConfiguration(
-                queueUrl,
-                region.getName
-              )
-            )
-        )
-      }
+      F.delay(build(AmazonSQSAsyncClientBuilder.standard()))
     } { sqsClient =>
-      F.start(F.delay(sqsClient.shutdown()))
-        .map(_.join)
-        .void
+      F.start(F.delay(sqsClient.shutdown())).flatMap(_.join)
     }
   }
+  private[this] def createSqsClient[F[_]](
+    credentialsProvider: AWSCredentialsProvider,
+    region: Regions,
+    queueUrl: String
+  )(
+    implicit F: Concurrent[F]
+  ): Resource[F, AmazonSQSAsync] =
+    createSqsClient(
+      _.withCredentials(credentialsProvider)
+        .withEndpointConfiguration(
+          new EndpointConfiguration(
+            queueUrl,
+            region.getName
+          )
+        )
+        .build()
+    )
+
+  private[this] def toCredentialsProvider(credentials: AWSCredentials): AWSCredentialsProvider =
+    new AWSStaticCredentialsProvider(
+      new BasicAWSCredentials(
+        credentials.getAWSAccessKeyId,
+        credentials.getAWSSecretKey
+      )
+    )
 }
