@@ -1,37 +1,18 @@
 package algae.fs2
 
-import cats.data.NonEmptyList
+import cats.Reducible
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import fs2.Stream
-import fs2.kafka.{CommittableMessage, ConsumerSettings, ProducerMessage, ProducerSettings, ProducerResult}
-
-import scala.concurrent.ExecutionContext
+import fs2.kafka._
 
 package object kafka {
-  def createDefaultKafkaConsumerStream[F[_], K, V](
-    settings: ExecutionContext => ConsumerSettings[K, V]
-  )(
-    implicit F: ConcurrentEffect[F],
-    context: ContextShift[F],
-    timer: Timer[F]
-  ): Stream[F, KafkaConsumer[F, K, V]] =
-    fs2.kafka.consumerExecutionContextStream[F]
-      .flatMap { executionContext =>
-        createKafkaConsumerStream(settings(executionContext))
-      }
-
-  def createDefaultKafkaConsumerStream[F[_]](
-    implicit F: ConcurrentEffect[F]
-  ): DefaultKafkaConsumerStream[F] =
-    new DefaultKafkaConsumerStream(F)
-
   def createKafkaConsumerStream[F[_], K, V](
     settings: ConsumerSettings[K, V]
   )(
     implicit F: ConcurrentEffect[F],
     context: ContextShift[F],
     timer: Timer[F]
-  ): Stream[F, KafkaConsumer[F, K, V]] =
+  ): Stream[F, algae.fs2.kafka.KafkaConsumer[F, K, V]] =
     fs2.kafka.consumerStream[F, K, V](settings).map { consumer =>
       new KafkaConsumer[F, K, V] {
         override val stream: Stream[F, CommittableMessage[F, K, V]] =
@@ -40,7 +21,7 @@ package object kafka {
         override val partitionedStream: Stream[F, Stream[F, CommittableMessage[F, K, V]]] =
           consumer.partitionedStream
 
-        override def subscribe(topics: NonEmptyList[String]): Stream[F, Unit] =
+        override def subscribe[G[_]](topics: G[String])(implicit G: Reducible[G]): F[Unit] =
           consumer.subscribe(topics)
       }
     }
@@ -54,7 +35,7 @@ package object kafka {
     settings: ProducerSettings[K, V]
   )(
     implicit F: ConcurrentEffect[F]
-  ): Stream[F, KafkaProducer[F, K, V]] =
+  ): Stream[F, algae.fs2.kafka.KafkaProducer[F, K, V]] =
     fs2.kafka.producerStream[F, K, V](settings).map { producer =>
       new KafkaProducer[F, K, V] {
         override def produceBatched[G[_], P](

@@ -201,13 +201,7 @@ To create a `KafkaConsumer`, you can use these functions:
 
 - `createKafkaConsumerStream[F, K, V](settings)`, or
 
-- `createKafkaConsumerStream[F].using(settings)`,
-
-or one of the following, where a new default `ExecutionContext` will be created.
-
-- `createDefaultKafkaConsumerStream[F, K, V](settings)`, or
-
-- `createDefaultKafkaConsumerStream[F].using(settings)`.
+- `createKafkaConsumerStream[F].using(settings)`.
 
 To create a `KafkaProducer`, use one of the following functions.
 
@@ -233,11 +227,10 @@ import scala.concurrent.duration._
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
-    val consumerSettings = (executionContext: ExecutionContext) =>
+    val consumerSettings =
       ConsumerSettings(
         keyDeserializer = new StringDeserializer,
-        valueDeserializer = new StringDeserializer,
-        executionContext = executionContext
+        valueDeserializer = new StringDeserializer
       )
       .withAutoOffsetReset(AutoOffsetReset.Earliest)
       .withBootstrapServers("localhost")
@@ -258,20 +251,20 @@ object Main extends IOApp {
 
     val stream =
       for {
-        consumer <- createDefaultKafkaConsumerStream[IO].using(consumerSettings)
         producer <- createKafkaProducerStream[IO].using(producerSettings)
-        _ <- consumer.subscribe(topics)
-        _ <- consumer.stream
-          .mapAsync(25)(message =>
-            processRecord(message.record)
-              .map {
-                case (key, value) =>
-                  val record = new ProducerRecord("topic", key, value)
-                  ProducerMessage.single(record, message.committableOffset)
-              })
-            .evalMap(producer.produceBatched)
-            .map(_.map(_.passthrough))
-            .to(commitBatchWithinF(500, 15.seconds))
+        _ <- createKafkaConsumerStream[IO]
+          .using(consumerSettings)
+          .evalTap(_.subscribe(topics))
+          .flatMap(_.stream)
+          .mapAsync(25) { message =>
+            processRecord(message.record).map { case (key, value) =>
+              val record = new ProducerRecord("topic", key, value)
+              ProducerMessage.single(record, message.committableOffset)
+            }
+          }
+          .evalMap(producer.produceBatched)
+          .map(_.map(_.passthrough))
+          .to(commitBatchWithinF(500, 15.seconds))
       } yield ()
 
     stream.compile.drain.as(ExitCode.Success)
