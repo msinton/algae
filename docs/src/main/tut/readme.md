@@ -374,53 +374,73 @@ s"""
 )
 ```
 
+To create ant `SqsConsumer`, you can use these functions:
+
+- `createSqsConsumer[F](credentials, region, queueUrl)`, or
+
+- `createSqsConsumer[F](credentialsProvider, region, queueUrl)`, or
+
+- `createSqsConsumer[F](amazonAwsAsync, queueUrl)`.
+
+To create ant `SqsProvider`, you can use these functions:
+
+- `createSqsProvider[F](credentials, region, queueUrl)`, or
+
+- `createSqsProvider[F](credentialsProvider, region, queueUrl)`, or
+
+- `createSqsProvider[F](amazonAwsAsync, queueUrl)`.
+
+And to create an `Resource[F, AmazonSQSAsync]` the following helpers can be used:
+ 
+- `createSqsClient(credentials, region, queueUrl, buildClient)`, or
+
+- `createSqsClient(credentialsProvider, region, queueUr, buildClient)`.
+
 Here is an example of how to use the `SqsProducer` and `SqsConsumer`.
 
 ```tut:silent
 import algae.sqs._
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.instances.list._
+import cats.syntax.functor._
 import cats.syntax.traverse._
-import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.auth.AWSCredentialsProviderChain
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.SendMessageResult
+import _root_.fs2.Stream
 import scala.concurrent.duration._
 
 object Main extends IOApp {
-  val credentials = new BasicAWSCredentials(
-    "ACCESS_KEY_ID",
-    "SECRET_ACCESS_KEY"
-  )
   
   val region: Regions = Regions.EU_WEST_1
   
   val queueUrl = "https://sqs.us-east-2.amazonaws.com/123456789012/MyQueue"
   
-  val producer = createSqsProducer[IO](
-    credentials,
-    region,
-    queueUrl
-  )
-   
-  val consumer = createSqsConsumer[IO](
-    credentials,
-    region,
-    queueUrl
-  )
+  val credentialsProvider = new AWSCredentialsProviderChain()
+  
+  val endpoint = new EndpointConfiguration(queueUrl, region.getName)
       
-  override def run(args: List[String]): IO[ExitCode] = producer.use { producer =>
-    consumer.use { consumer =>
-      for {
-        _ <- producer.send("MyMessage")
-        messages <- consumer
-          .messages
-          .take(1)
-          .map(_.getReceiptHandle)
-          .evalMap(consumer.commit)
-          .compile
-          .drain
-      } yield ExitCode.Success
-    }
+  override def run(args: List[String]): IO[ExitCode] = {
+    val stream = for {
+      sqs <- Stream.resource(
+        createSqsClient[IO](builder =>
+          builder
+            .withCredentials(credentialsProvider)
+            .withEndpointConfiguration(endpoint)
+            .build()
+          )
+        )
+      consumer = createSqsConsumer[IO](sqs, queueUrl)
+      producer = createSqsProducer[IO](sqs, queueUrl)
+      _ <- consumer
+        .messages
+        .take(1)
+        .map(_.getReceiptHandle)
+        .evalMap(consumer.commit)
+    } yield ()
+    
+    stream.compile.drain.as(ExitCode.Success)
   }
 }
 ```
