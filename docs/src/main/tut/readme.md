@@ -367,7 +367,7 @@ s"""
 )
 ```
 
-To create ant `SqsConsumer`, you can use these functions:
+To create an `SqsConsumer`, you can use these functions:
 
 - `createSqsConsumer[F](credentials, region, queueUrl)`, or
 
@@ -375,7 +375,7 @@ To create ant `SqsConsumer`, you can use these functions:
 
 - `createSqsConsumer[F](amazonAwsAsync, queueUrl)`.
 
-To create ant `SqsProvider`, you can use these functions:
+To create an `SqsProvider`, you can use these functions:
 
 - `createSqsProvider[F](credentials, region, queueUrl)`, or
 
@@ -383,11 +383,7 @@ To create ant `SqsProvider`, you can use these functions:
 
 - `createSqsProvider[F](amazonAwsAsync, queueUrl)`.
 
-And to create an `Resource[F, AmazonSQSAsync]` the following helpers can be used:
- 
-- `createSqsClient(credentials, region, queueUrl, buildClient)`, or
-
-- `createSqsClient(credentialsProvider, region, queueUr, buildClient)`.
+And to create a `Resource[F, AmazonSQSAsync]` the helper `createSqsClient(buildClient)` can be used.
 
 Here is an example of how to use the `SqsProducer` and `SqsConsumer`.
 
@@ -397,7 +393,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import cats.instances.list._
 import cats.syntax.functor._
 import cats.syntax.traverse._
-import com.amazonaws.auth.AWSCredentialsProviderChain
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.SendMessageResult
@@ -410,7 +406,7 @@ object Main extends IOApp {
   
   val queueUrl = "https://sqs.us-east-2.amazonaws.com/123456789012/MyQueue"
   
-  val credentialsProvider = new AWSCredentialsProviderChain()
+  val credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
   
   val endpoint = new EndpointConfiguration(queueUrl, region.getName)
       
