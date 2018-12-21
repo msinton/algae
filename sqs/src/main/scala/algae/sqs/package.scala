@@ -3,21 +3,16 @@ package algae
 import cats.effect.{Async, Concurrent, Resource}
 import cats.syntax.functor._
 import cats.syntax.flatMap._
-import com.amazonaws.auth.{
-  AWSCredentials,
-  AWSCredentialsProvider,
-  AWSStaticCredentialsProvider,
-  BasicAWSCredentials
-}
+import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider, AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.regions.Regions
+import com.amazonaws.regions.Region
 import com.amazonaws.services.sqs.{AmazonSQSAsync, AmazonSQSAsyncClientBuilder}
 
 package object sqs {
 
   def createSqsConsumer[F[_]](
     credentialsProvider: AWSCredentialsProvider,
-    region: Regions,
+    region: Region,
     queueUrl: String
   )(
     implicit F: Concurrent[F]
@@ -29,7 +24,7 @@ package object sqs {
 
   def createSqsConsumer[F[_]](
     credentials: AWSCredentials,
-    region: Regions,
+    region: Region,
     queueUrl: String
   )(
     implicit F: Concurrent[F]
@@ -41,7 +36,7 @@ package object sqs {
 
   def createSqsProducer[F[_]](
     credentialsProvider: AWSCredentialsProvider,
-    region: Regions,
+    region: Region,
     queueUrl: String
   )(
     implicit F: Concurrent[F]
@@ -53,7 +48,7 @@ package object sqs {
 
   def createSqsProducer[F[_]](
     credentials: AWSCredentials,
-    region: Regions,
+    region: Region,
     queueUrl: String
   )(
     implicit F: Concurrent[F]
@@ -91,7 +86,7 @@ package object sqs {
   }
   private[this] def createSqsClient[F[_]](
     credentialsProvider: AWSCredentialsProvider,
-    region: Regions,
+    region: Region,
     queueUrl: String
   )(
     implicit F: Concurrent[F]
