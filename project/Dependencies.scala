@@ -9,6 +9,7 @@ object Dependencies extends AutoPlugin {
     val ciris = "0.12.0"
     val cirisAivenKafka = "0.13"
     val cirisKubernetes = "0.10"
+    val fs2 = "1.0.2"
     val fs2Kafka = "0.18.0"
     val kamon = "1.1.3"
     val kamonInfluxDb = "1.0.2"
@@ -17,6 +18,7 @@ object Dependencies extends AutoPlugin {
     val logback = "1.2.3"
     val scalaTest = "3.0.5"
     val slf4j = "1.7.25"
+    val awsSdk = "1.11.455"
   }
 
   object autoImport {
@@ -117,6 +119,13 @@ object Dependencies extends AutoPlugin {
     val slf4jApi: Seq[Def.Setting[_]] = Def.settings(
       libraryDependencies ++= Seq(
         "org.slf4j" % "slf4j-api" % Versions.slf4j
+      )
+    )
+
+    val awsSqs: Seq[Def.Setting[_]] = Def.settings(
+      libraryDependencies ++= Seq(
+        "com.amazonaws" % "aws-java-sdk" % Versions.awsSdk,
+        "co.fs2" %% "fs2-core" % Versions.fs2
       )
     )
 

@@ -18,6 +18,7 @@ Algae defines final tagless algebras around common capabilities, such as [`Loggi
 1. [Counting](#counting)
 1. [Kafka](#kafka)
 1. [Logging](#logging)
+1. [Sqs](#sqs)
 
 ### Getting Started
 To get started with [sbt][sbt], simply add the following lines to your `build.sbt` file.
@@ -353,9 +354,92 @@ for {
 
 The example above immediately logs `ApplicationStarted` and then logs a combined message containing `HelloWorld` twice. After dispatching logs with `dispatchLogs`, accumulated logs are cleared. It's worth noting that the log entries are stored in a separate `Ref`, so even if part of your program fails, any logged messages are still available.
 
+### Sqs
+The `algae-sqs` module provides the `SqsConsumer` and `SqsProducer` algebras.
+
+```tut:passthrough
+println(
+s"""
+ |```scala
+ |libraryDependencies += "com.ovoenergy" %% "algae-sqs" % algaeVersion
+ |```
+ """
+)
+```
+
+To create an `SqsConsumer`, you can use these functions:
+
+- `createSqsConsumer[F](credentials, region, queueUrl)`, or
+
+- `createSqsConsumer[F](credentialsProvider, region, queueUrl)`, or
+
+- `createSqsConsumer[F](amazonAwsAsync, queueUrl)`.
+
+To create an `SqsProvider`, you can use these functions:
+
+- `createSqsProvider[F](credentials, region, queueUrl)`, or
+
+- `createSqsProvider[F](credentialsProvider, region, queueUrl)`, or
+
+- `createSqsProvider[F](amazonAwsAsync, queueUrl)`.
+
+And to create a `Resource[F, AmazonSQSAsync]` the helper `createSqsClient(buildClient)` can be used.
+
+Here is an example of how to use the `SqsProducer` and `SqsConsumer`.
+
+```tut:silent
+import algae.sqs._
+import cats.effect.{ExitCode, IO, IOApp}
+import cats.instances.list._
+import cats.syntax.functor._
+import cats.syntax.traverse._
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.regions.Regions
+import com.amazonaws.services.sqs.model.SendMessageResult
+import _root_.fs2.Stream
+import scala.concurrent.duration._
+
+object Main extends IOApp {
+  
+  val region: Regions = Regions.EU_WEST_1
+  
+  val queueUrl = "https://sqs.us-east-2.amazonaws.com/123456789012/MyQueue"
+  
+  val credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
+  
+  val endpoint = new EndpointConfiguration(queueUrl, region.getName)
+      
+  override def run(args: List[String]): IO[ExitCode] = {
+    val stream = for {
+      sqs <- Stream.resource(
+        createSqsClient[IO](builder =>
+          builder
+            .withCredentials(credentialsProvider)
+            .withEndpointConfiguration(endpoint)
+            .build()
+          )
+        )
+      consumer = createSqsConsumer[IO](sqs, queueUrl)
+      producer = createSqsProducer[IO](sqs, queueUrl)
+      _ <- consumer
+        .messages
+        .take(1)
+        .map(_.getReceiptHandle)
+        .evalMap(consumer.commit)
+    } yield ()
+    
+    stream.compile.drain.as(ExitCode.Success)
+  }
+}
+```
+
+
+
 [cats-effect]: https://typelevel.org/cats-effect
 [cats-mtl]: https://github.com/typelevel/cats-mtl
 [cats]: https://typelevel.org/cats
 [fs2-kafka]: https://github.com/ovotech/fs2-kafka
 [sbt]: https://www.scala-sbt.org
 [scala]: https://scala-lang.org
+[sqs]: https://aws.amazon.com/sqs/
