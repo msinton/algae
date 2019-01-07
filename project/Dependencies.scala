@@ -124,7 +124,7 @@ object Dependencies extends AutoPlugin {
 
     val awsSqs: Seq[Def.Setting[_]] = Def.settings(
       libraryDependencies ++= Seq(
-        "com.amazonaws" % "aws-java-sdk" % Versions.awsSdk,
+        "com.amazonaws" % "aws-java-sdk-sqs" % Versions.awsSdk,
         "co.fs2" %% "fs2-core" % Versions.fs2
       )
     )
