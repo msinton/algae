@@ -1,7 +1,6 @@
 package algae
 
 import cats.effect.{Async, Concurrent, Resource}
-import cats.syntax.functor._
 import cats.syntax.flatMap._
 import com.amazonaws.auth.{
   AWSCredentials,

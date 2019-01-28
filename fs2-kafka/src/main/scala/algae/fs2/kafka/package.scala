@@ -38,15 +38,15 @@ package object kafka {
   ): Stream[F, algae.fs2.kafka.KafkaProducer[F, K, V]] =
     fs2.kafka.producerStream[F, K, V](settings).map { producer =>
       new KafkaProducer[F, K, V] {
-        override def produceBatched[G[_], P](
+        override def produce[G[+_], P](
           message: ProducerMessage[G, K, V, P]
         ): F[F[ProducerResult[G, K, V, P]]] =
-          producer.produceBatched(message)
-
-        override def produce[G[_], P](
-          message: ProducerMessage[G, K, V, P]
-        ): F[ProducerResult[G, K, V, P]] =
           producer.produce(message)
+
+        override def producePassthrough[G[+_], P](
+          message: ProducerMessage[G, K, V, P]
+        ): F[F[P]] =
+          producer.producePassthrough(message)
       }
     }
 

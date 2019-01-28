@@ -5,20 +5,20 @@ object Dependencies extends AutoPlugin {
   object Versions {
     val cats = "1.5.0"
     val catsMtl = "0.4.0"
-    val catsEffect = "1.1.0"
+    val catsEffect = "1.2.0"
     val ciris = "0.12.1"
     val cirisAivenKafka = "0.13"
     val cirisKubernetes = "0.10"
-    val fs2 = "1.0.2"
-    val fs2Kafka = "0.18.1"
-    val kamon = "1.1.4"
+    val fs2 = "1.0.3"
+    val fs2Kafka = "0.19.0"
+    val kamon = "1.1.5"
     val kamonInfluxDb = "1.0.2"
-    val kamonSystemMetrics = "1.0.0"
+    val kamonSystemMetrics = "1.0.1"
     val kindProjector = "0.9.9"
     val logback = "1.2.3"
     val scalaTest = "3.0.5"
     val slf4j = "1.7.25"
-    val awsSdk = "1.11.478"
+    val awsSdk = "1.11.490"
   }
 
   object autoImport {
