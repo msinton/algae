@@ -219,7 +219,7 @@ import cats.syntax.traverse._
 import algae.fs2.kafka._
 import _root_.fs2.kafka._
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
-import org.apache.kafka.clients.producer.{ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
 import scala.concurrent.ExecutionContext
@@ -258,13 +258,12 @@ object Main extends IOApp {
           .flatMap(_.stream)
           .mapAsync(25) { message =>
             processRecord(message.record).map { case (key, value) =>
-              val record = new ProducerRecord("topic", key, value)
-              ProducerMessage.single(record, message.committableOffset)
+              val record = ProducerRecord("topic", key, value)
+              ProducerMessage.one(record, message.committableOffset)
             }
           }
-          .evalMap(producer.produceBatched)
-          .map(_.map(_.passthrough))
-          .to(commitBatchWithinF(500, 15.seconds))
+          .evalMap(producer.producePassthrough)
+          .through(commitBatchWithinF(500, 15.seconds))
       } yield ()
 
     stream.compile.drain.as(ExitCode.Success)
