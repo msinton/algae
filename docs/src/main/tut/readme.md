@@ -3,6 +3,7 @@ import algae.build.info._
 ```
 
 ## Algae
+
 Algae is a [Scala][scala] library providing a diverse group of final tagless algebras.
 
 > Algae ([/ˈældʒi, ˈælɡi/](https://en.wikipedia.org/wiki/Help:IPA/English); singular alga [/ˈælɡə/](https://en.wikipedia.org/wiki/Help:IPA/English)) is an informal term for a large, diverse group of [photosynthetic](https://en.wikipedia.org/wiki/Photosynthesis) [eukaryotic](https://en.wikipedia.org/wiki/Eukaryotic) [organisms](https://en.wikipedia.org/wiki/Organism) that are not necessarily closely related, and is thus [polyphyletic](https://en.wikipedia.org/wiki/Polyphyletic).
@@ -10,9 +11,11 @@ Algae is a [Scala][scala] library providing a diverse group of final tagless alg
 Algae is a new project under active development. Feedback and contributions are welcome.
 
 ### Introduction
+
 Algae defines final tagless algebras around common capabilities, such as [`Logging`](#logging) and [`Counting`](#counting). The core library makes use of [cats][cats], [cats-mtl][cats-mtl], and [cats-effect][cats-effect], while modules use external libraries to implement, complement, and define extra algebras. Algae also defines supportive constructs like: type classes, immutable data, and pure functions.
 
 ### Contents
+
 1. [Getting Started](#getting-started)
 1. [Configuration](#configuration)
 1. [Counting](#counting)
@@ -21,9 +24,10 @@ Algae defines final tagless algebras around common capabilities, such as [`Loggi
 1. [Sqs](#sqs)
 
 ### Getting Started
+
 To get started with [sbt][sbt], simply add the following lines to your `build.sbt` file.
 
-```tut:passthrough
+````tut:passthrough
 println(
 s"""
  |```scala
@@ -35,12 +39,13 @@ s"""
  |```
  """.stripMargin.trim
 )
-```
+````
 
 ### Configuration
+
 The `Config` algebra implements basic configuration using environment variables and system properties. An implementation using Ciris is defined as `CirisConfig`, and there's a `KubernetesConfig` algebra for Kubernetes secrets support. There is also an `AivenKafkaConfig` algebra using [ciris-aiven-kafka](https://github.com/ovotech/ciris-aiven-kafka). Following are the relevant modules and the lines you need for `build.sbt` to include them in your project.
 
-```tut:passthrough
+````tut:passthrough
 println(
 s"""
  |```scala
@@ -52,7 +57,7 @@ s"""
  |```
  """
 )
-```
+````
 
 To create an instance of `CirisConfig`, simply `import algae.ciris._` and use `createCirisConfig`.
 
@@ -80,7 +85,7 @@ loadConfiguration(cirisConfig)
 
 To create an instance of `KubernetesConfig`, simply `import algae.ciris.kubernetes._` and use either:
 
-- `createDefaultKubernetesConfig` to use the default configuration options, or 
+- `createDefaultKubernetesConfig` to use the default configuration options, or
 - `createKubernetesConfig` to customize the API client and authenticators to use.
 
 ```tut:silent
@@ -117,9 +122,10 @@ val aivenKafkaConfig: AivenKafkaConfig[IO] =
 ```
 
 ### Counting
+
 The `Counting` algebra implements counting and count accumulation. Accumulation is supported via the `MonadLog` type class, and `createMonadLog` is available to create a `MonadLog` using a `Ref[F]`. An implementation of `Counting` using `Kamon` is provided. If count accumulation isn't necessary, `CountingNow` can be used. Additionally, there are functions for configuring Kamon modules available.
 
-```tut:passthrough
+````tut:passthrough
 println(
 s"""
  |```scala
@@ -131,7 +137,7 @@ s"""
  |```
  """
 )
-```
+````
 
 Start by defining your counter increments. It's recommended to use a coproduct, like a `sealed abstract class`. This keeps your counter increments in a single place, and the logic for what is counted is encapsulated in the increments. A `CounterIncrement` consists of a counter name, a map of tags, and the number of times to increment.
 
@@ -185,9 +191,10 @@ kamonSetup.use { _ =>
 The example above immediately counts `ApplicationStarted` and then counts `SaidHello` twice when `dispatchCounts` is invoked. After dispatching counts with `dispatchCounts`, accumulated counts are cleared. It's worth noting that the counter increments are stored in a separate `Ref`, so even if part of your program fails, any counts are still available.
 
 ### Kafka
+
 The `algae-fs2-kafka` module provides `KafkaConsumer` and `KafkaProducer` algebras and implements them using [fs2-kafka][fs2-kafka].
 
-```tut:passthrough
+````tut:passthrough
 println(
 s"""
  |```scala
@@ -195,19 +202,19 @@ s"""
  |```
  """
 )
-```
+````
 
 To create a `KafkaConsumer`, you can use these functions:
 
-- `createKafkaConsumerStream[F, K, V](settings)`, or
+- `createFs2KafkaConsumerStream[F, K, V](settings)`, or
 
-- `createKafkaConsumerStream[F].using(settings)`.
+- `createFs2KafkaConsumerStream[F].using(settings)`.
 
 To create a `KafkaProducer`, use one of the following functions.
 
-- `createKafkaProducerStream[F, K, V](settings)`, or
+- `createFs2KafkaProducerStream[F, K, V](settings)`, or
 
-- `createKafkaProducerStream[F].using(settings)`.
+- `createFs2KafkaProducerStream[F].using(settings)`.
 
 Following is an example of how to create a `KafkaConsumer` and `KafkaProducer`.
 
@@ -251,8 +258,8 @@ object Main extends IOApp {
 
     val stream =
       for {
-        producer <- createKafkaProducerStream[IO].using(producerSettings)
-        _ <- createKafkaConsumerStream[IO]
+        producer <- createFs2KafkaProducerStream[IO].using(producerSettings)
+        _ <- createFs2KafkaConsumerStream[IO]
           .using(consumerSettings)
           .evalTap(_.subscribe(topics))
           .flatMap(_.stream)
@@ -272,12 +279,13 @@ object Main extends IOApp {
 ```
 
 ### Logging
+
 The `Logging` algebra implements log accumulation and dispatching of log messages, with support for diagnostic contexts. This is done via the `MonadLog` type class, which is a thin wrapper around `MonadState`, with additional laws governing log accumulation. If you're working with a `Sync[F]` context, a `Ref[F]` can be used to implement `MonadLog`, and there's a `createMonadLog` helper function for exactly that. If log accumulation isn't necessary, `LoggingNow` can be used.
 
-If you want slf4j logging support, simply add the `algae-slf4j` module to your dependencies in `build.sbt`.  
+If you want slf4j logging support, simply add the `algae-slf4j` module to your dependencies in `build.sbt`.
 The `algae-logback` module adds Logback as a dependency, for convenience when wanting to use Logback.
 
-```tut:passthrough
+````tut:passthrough
 println(
 s"""
  |```scala
@@ -288,7 +296,7 @@ s"""
  |```
  """
 )
-```
+````
 
 Start by defining your log entries. It's recommended to use a coproduct, like a `sealed trait`. This keeps your log entries in a single place, and the logic for what is logged is encapsulated in the log entries. A log entry consists of a `LogLevel` and a `String` message. We define an instance for `LogEntry` for our coproduct, to define it as a log entry.
 
@@ -354,9 +362,10 @@ for {
 The example above immediately logs `ApplicationStarted` and then logs a combined message containing `HelloWorld` twice. After dispatching logs with `dispatchLogs`, accumulated logs are cleared. It's worth noting that the log entries are stored in a separate `Ref`, so even if part of your program fails, any logged messages are still available.
 
 ### Sqs
+
 The `algae-sqs` module provides the `SqsConsumer` and `SqsProducer` algebras.
 
-```tut:passthrough
+````tut:passthrough
 println(
 s"""
  |```scala
@@ -364,7 +373,7 @@ s"""
  |```
  """
 )
-```
+````
 
 To create an `SqsConsumer`, you can use these functions:
 
@@ -400,15 +409,15 @@ import _root_.fs2.Stream
 import scala.concurrent.duration._
 
 object Main extends IOApp {
-  
+
   val region: Regions = Regions.EU_WEST_1
-  
+
   val queueUrl = "https://sqs.us-east-2.amazonaws.com/123456789012/MyQueue"
-  
+
   val credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance
-  
+
   val endpoint = new EndpointConfiguration(queueUrl, region.getName)
-      
+
   override def run(args: List[String]): IO[ExitCode] = {
     val stream = for {
       sqs <- Stream.resource(
@@ -427,13 +436,11 @@ object Main extends IOApp {
         .map(_.getReceiptHandle)
         .evalMap(consumer.commit)
     } yield ()
-    
+
     stream.compile.drain.as(ExitCode.Success)
   }
 }
 ```
-
-
 
 [cats-effect]: https://typelevel.org/cats-effect
 [cats-mtl]: https://github.com/typelevel/cats-mtl

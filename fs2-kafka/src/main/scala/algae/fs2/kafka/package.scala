@@ -6,15 +6,15 @@ import fs2.Stream
 import fs2.kafka._
 
 package object kafka {
-  def createKafkaConsumerStream[F[_], K, V](
+  def createFs2KafkaConsumerStream[F[_], K, V](
     settings: ConsumerSettings[K, V]
   )(
     implicit F: ConcurrentEffect[F],
     context: ContextShift[F],
     timer: Timer[F]
-  ): Stream[F, algae.fs2.kafka.KafkaConsumer[F, K, V]] =
-    fs2.kafka.consumerStream[F, K, V](settings).map { consumer =>
-      new KafkaConsumer[F, K, V] {
+  ): Stream[F, Fs2KafkaConsumer[F, K, V]] =
+    consumerStream[F, K, V](settings).map { consumer =>
+      new Fs2KafkaConsumer[F, K, V] {
         override val stream: Stream[F, CommittableMessage[F, K, V]] =
           consumer.stream
 
@@ -26,32 +26,32 @@ package object kafka {
       }
     }
 
-  def createKafkaConsumerStream[F[_]](
+  def createFs2KafkaConsumerStream[F[_]](
     implicit F: ConcurrentEffect[F]
-  ): KafkaConsumerStream[F] =
-    new KafkaConsumerStream(F)
+  ): Fs2KafkaConsumerStream[F] =
+    new Fs2KafkaConsumerStream(F)
 
-  def createKafkaProducerStream[F[_], K, V](
+  def createFs2KafkaProducerStream[F[_], K, V](
     settings: ProducerSettings[K, V]
   )(
     implicit F: ConcurrentEffect[F]
-  ): Stream[F, algae.fs2.kafka.KafkaProducer[F, K, V]] =
-    fs2.kafka.producerStream[F, K, V](settings).map { producer =>
-      new KafkaProducer[F, K, V] {
-        override def produce[G[+_], P](
+  ): Stream[F, Fs2KafkaProducer[F, K, V]] =
+    producerStream[F, K, V](settings).map { producer =>
+      new Fs2KafkaProducer[F, K, V] {
+        override def produce[G[+ _], P](
           message: ProducerMessage[G, K, V, P]
         ): F[F[ProducerResult[G, K, V, P]]] =
           producer.produce(message)
 
-        override def producePassthrough[G[+_], P](
+        override def producePassthrough[G[+ _], P](
           message: ProducerMessage[G, K, V, P]
         ): F[F[P]] =
           producer.producePassthrough(message)
       }
     }
 
-  def createKafkaProducerStream[F[_]](
+  def createFs2KafkaProducerStream[F[_]](
     implicit F: ConcurrentEffect[F]
-  ): KafkaProducerStream[F] =
-    new KafkaProducerStream(F)
+  ): Fs2KafkaProducerStream[F] =
+    new Fs2KafkaProducerStream(F)
 }
