@@ -32,6 +32,18 @@ package object kubernetes {
         secretInNamespace(namespace, apiClient)
           .apply[A](name, key)
 
+      def configMap[A](namespace: String, name: String)(
+        implicit decoder: ConfigDecoder[String, A]
+      ): ConfigEntry[F, ConfigMapKey, String, A] =
+        configMapInNamespace(namespace, apiClient)
+          .apply[A](name)
+
+      def configMap[A](namespace: String, name: String, key: String)(
+        implicit decoder: ConfigDecoder[String, A]
+      ): ConfigEntry[F, ConfigMapKey, String, A] =
+        configMapInNamespace(namespace, apiClient)
+          .apply[A](name, key)
+
       override def env[A](key: String)(
         implicit decoder: ConfigDecoder[String, A]
       ): ConfigEntry[F, String, String, A] = envF(key)
