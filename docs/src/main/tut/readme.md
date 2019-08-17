@@ -96,7 +96,7 @@ import ciris.Secret
 implicit val contextShift: ContextShift[IO] =
   IO.contextShift(scala.concurrent.ExecutionContext.global)
 
-final case class Config(appEnv: String, maxRetries: Int, apiKey: Secret[String])
+final case class Config(appEnv: String, maxRetries: Int, apiKey: Secret[String], url: String)
 
 def loadConfiguration[F[_]](config: KubernetesConfig[F])(
   implicit F: MonadError[F, Throwable]
@@ -105,6 +105,7 @@ def loadConfiguration[F[_]](config: KubernetesConfig[F])(
     config.env[String]("APP_ENV"),
     config.prop[Int]("max.retries"),
     config.secret[Secret[String]]("namespace", "api-key")
+    config.configMap[String]("namespace", "url")
   )(Config.apply).orRaiseThrowable
 }
 
